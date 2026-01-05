@@ -1,0 +1,81 @@
+{
+  "expo": {
+    "name": "ZenWalls",
+    "slug": "zenwalls",
+    "version": "1.0.0",
+    "orientation": "portrait",
+
+    "icon": "./assets/images/icon.png",
+
+    "scheme": "rork-app",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+
+    "splash": {
+      "image": "./assets/images/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "app.zenwalls.wallpapers",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Allow ZenWalls to access your photos.",
+        "NSPhotoLibraryAddUsageDescription": "Allow ZenWalls to save photos."
+      }
+    },
+
+    "android": {
+      "package": "app.zenwalls.wallpapers",
+      "versionCode": 10,
+
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-foreground.png",
+        "backgroundImage": "./assets/images/adaptive-background.png"
+      },
+
+      "permissions": [
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "READ_MEDIA_IMAGES",
+        "READ_MEDIA_VISUAL_USER_SELECTED",
+        "ACCESS_MEDIA_LOCATION",
+        "INTERNET"
+      ]
+    },
+
+    "web": {
+      "favicon": "./assets/images/icon.png"
+    },
+
+    "plugins": [
+      [
+        "expo-router",
+        {
+          "origin": "https://rork.com/"
+        }
+      ],
+      "expo-font",
+      "expo-web-browser",
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Allow ZenWalls to access your photos.",
+          "savePhotosPermission": "Allow ZenWalls to save photos.",
+          "isAccessMediaLocationEnabled": true
+        }
+      ]
+    ],
+
+    "experiments": {
+      "typedRoutes": true
+    },
+
+    "extra": {
+      "eas": {
+        "projectId": "0a2e06dc-e23c-4b37-9ace-bdbe6aeaf78e"
+      }
+    }
+  }
+}
