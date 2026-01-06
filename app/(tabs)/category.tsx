@@ -1,60 +1,72 @@
 import React from "react";
-import { StyleSheet, Text, View, ScrollView, Pressable, FlatList, Dimensions } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  View,
+  ScrollView,
+  Pressable,
+  FlatList,
+  Dimensions,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ChevronRight, ArrowLeft } from "lucide-react-native";
-import { CATEGORIES, WALLPAPERS } from "@/mocks/wallpapers";
+import { CATEGORIES, WALLPAPERS } from "@/constants/wallpapers";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 
-const { width } = Dimensions.get('window');
+const { width } = Dimensions.get("window");
 const ITEM_WIDTH = (width - 60) / 2;
 
 export default function CategoryScreen() {
   const params = useLocalSearchParams<{ categoryId?: string }>();
   const selectedCategoryId = params.categoryId;
 
-  const getCategoryCount = (categoryId: string) => {
-    return WALLPAPERS.filter(w => w.category === categoryId).length;
-  };
+  const getCategoryCount = (categoryId: string) =>
+    WALLPAPERS.filter(w => w.category === categoryId).length;
 
+  // ✅ FIX 1: Prevent redundant replace
   const handleCategoryPress = (categoryId: string) => {
-    router.push(`/category?categoryId=${categoryId}`);
+    if (selectedCategoryId === categoryId) return;
+    router.replace(`/category?categoryId=${categoryId}`);
   };
 
-  const handleWallpaperPress = (wallpaper: typeof WALLPAPERS[0]) => {
+  const handleWallpaperPress = (wallpaper: typeof WALLPAPERS[number]) => {
     router.push({
-      pathname: '/preview',
+      pathname: "/preview",
       params: {
         id: wallpaper.id,
         title: wallpaper.title,
-        imageUrl: wallpaper.imageUrl,
       },
     });
   };
 
+  // ✅ FIX 2: Predictable back navigation
   const handleBack = () => {
-    router.back();
+    router.replace("/category");
   };
 
+  /* ================= CATEGORY DETAIL ================= */
   if (selectedCategoryId) {
     const category = CATEGORIES.find(c => c.id === selectedCategoryId);
-    const categoryWallpapers = WALLPAPERS.filter(w => w.category === selectedCategoryId);
+    const categoryWallpapers = WALLPAPERS.filter(
+      w => w.category === selectedCategoryId
+    );
 
     return (
       <View style={styles.container}>
-        <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
+        <SafeAreaView edges={["top", "bottom"]} style={styles.safeArea}>
           <View style={styles.detailHeader}>
             <Pressable
+              onPress={handleBack}
               style={({ pressed }) => [
                 styles.backButton,
-                pressed && styles.categoryCardPressed,
+                pressed && styles.pressed,
               ]}
-              onPress={handleBack}
-              android_ripple={{ color: 'rgba(255,255,255,0.1)' }}
-              testID="back-button"
+              android_ripple={{ color: "rgba(255,255,255,0.1)" }}
             >
-              <ArrowLeft color="#ffffff" size={24} />
+              <ArrowLeft color="#fff" size={24} />
             </Pressable>
+
             <View style={styles.detailHeaderContent}>
               <Text style={styles.detailHeaderIcon}>{category?.icon}</Text>
               <View>
@@ -68,23 +80,22 @@ export default function CategoryScreen() {
 
           <FlatList
             data={categoryWallpapers}
-            keyExtractor={(item) => item.id}
+            keyExtractor={item => item.id}
             numColumns={2}
             contentContainerStyle={styles.gridContent}
             columnWrapperStyle={styles.gridRow}
             showsVerticalScrollIndicator={false}
+            removeClippedSubviews
             renderItem={({ item }) => (
               <Pressable
+                onPress={() => handleWallpaperPress(item)}
                 style={({ pressed }) => [
                   styles.wallpaperCard,
-                  pressed && styles.categoryCardPressed,
+                  pressed && styles.pressed,
                 ]}
-                onPress={() => handleWallpaperPress(item)}
-                android_ripple={{ color: 'rgba(255,255,255,0.1)' }}
-                testID={`wallpaper-${item.id}`}
               >
                 <Image
-                  source={{ uri: item.imageUrl }}
+                  source={item.image}
                   style={styles.wallpaperImage}
                   contentFit="cover"
                 />
@@ -101,11 +112,11 @@ export default function CategoryScreen() {
     );
   }
 
+  /* ================= CATEGORY LIST ================= */
   return (
     <View style={styles.container}>
-      <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
-        <ScrollView 
-          style={styles.scrollView}
+      <SafeAreaView edges={["top", "bottom"]} style={styles.safeArea}>
+        <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
@@ -115,32 +126,30 @@ export default function CategoryScreen() {
           </View>
 
           <View style={styles.categoriesList}>
-            {CATEGORIES.map((category, index) => {
+            {CATEGORIES.map(category => {
               const count = getCategoryCount(category.id);
-              const isAmoled = category.id === 'amoled';
-              
+              const isAmoled = category.id === "amoled";
+
               return (
                 <Pressable
                   key={category.id}
+                  onPress={() => handleCategoryPress(category.id)}
                   style={({ pressed }) => [
                     styles.categoryCard,
                     isAmoled && styles.categoryCardFeatured,
-                    pressed && styles.categoryCardPressed,
+                    pressed && styles.pressed,
                   ]}
-                  onPress={() => handleCategoryPress(category.id)}
-                  android_ripple={{
-                    color: isAmoled ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)',
-                  }}
-                  testID={`category-${category.id}`}
                 >
                   <View style={styles.categoryContent}>
                     <View style={styles.categoryLeft}>
                       <Text style={styles.categoryIcon}>{category.icon}</Text>
-                      <View style={styles.categoryInfo}>
-                        <Text style={[
-                          styles.categoryName,
-                          isAmoled && styles.categoryNameFeatured,
-                        ]}>
+                      <View>
+                        <Text
+                          style={[
+                            styles.categoryName,
+                            isAmoled && styles.categoryNameFeatured,
+                          ]}
+                        >
                           {category.name}
                         </Text>
                         <Text style={styles.categoryCount}>
@@ -148,16 +157,11 @@ export default function CategoryScreen() {
                         </Text>
                       </View>
                     </View>
-                    <ChevronRight 
-                      color={isAmoled ? '#ffffff' : '#666666'} 
-                      size={20} 
+                    <ChevronRight
+                      size={20}
+                      color={isAmoled ? "#000" : "#666"}
                     />
                   </View>
-                  {isAmoled && (
-                    <View style={styles.featuredBadge}>
-                      <Text style={styles.featuredText}>FEATURED</Text>
-                    </View>
-                  )}
                 </Pressable>
               );
             })}
@@ -168,166 +172,76 @@ export default function CategoryScreen() {
   );
 }
 
+/* ================= STYLES ================= */
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#000000',
-  },
-  safeArea: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 20,
-  },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 24,
-  },
-  headerTitle: {
-    fontSize: 32,
-    fontWeight: '700' as const,
-    color: '#ffffff',
-    letterSpacing: -0.5,
-  },
-  headerSubtitle: {
-    fontSize: 16,
-    color: '#999999',
-    marginTop: 4,
-  },
-  categoriesList: {
-    paddingHorizontal: 20,
-    gap: 12,
-  },
+  container: { flex: 1, backgroundColor: "#000" },
+  safeArea: { flex: 1 },
+  scrollContent: { paddingBottom: 20 },
+
+  header: { padding: 20 },
+  headerTitle: { fontSize: 32, fontWeight: "700", color: "#fff" },
+  headerSubtitle: { fontSize: 16, color: "#999" },
+
+  categoriesList: { paddingHorizontal: 20, gap: 12 },
   categoryCard: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: "#1a1a1a",
     borderRadius: 16,
     padding: 20,
-    borderWidth: 1,
-    borderColor: '#2a2a2a',
-    minHeight: 72,
   },
-  categoryCardFeatured: {
-    backgroundColor: '#ffffff',
-    borderColor: '#ffffff',
-  },
+  categoryCardFeatured: { backgroundColor: "#fff" },
+  pressed: { opacity: 0.7 },
+
   categoryContent: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    justifyContent: 'space-between' as const,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
-  categoryLeft: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    gap: 16,
-    flex: 1,
-  },
-  categoryIcon: {
-    fontSize: 32,
-  },
-  categoryInfo: {
-    flex: 1,
-  },
-  categoryName: {
-    fontSize: 18,
-    fontWeight: '600' as const,
-    color: '#ffffff',
-    marginBottom: 4,
-  },
-  categoryNameFeatured: {
-    color: '#000000',
-  },
-  categoryCount: {
-    fontSize: 14,
-    color: '#666666',
-  },
-  categoryCardPressed: {
-    opacity: 0.7,
-  },
-  featuredBadge: {
-    position: 'absolute' as const,
-    top: 12,
-    right: 12,
-    backgroundColor: '#000000',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  featuredText: {
-    fontSize: 10,
-    fontWeight: '700' as const,
-    color: '#ffffff',
-    letterSpacing: 0.5,
-  },
+  categoryLeft: { flexDirection: "row", gap: 16 },
+  categoryIcon: { fontSize: 32 },
+  categoryName: { fontSize: 18, color: "#fff", fontWeight: "600" },
+  categoryNameFeatured: { color: "#000" },
+  categoryCount: { color: "#666" },
+
   detailHeader: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 24,
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 20,
     gap: 16,
   },
   backButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#1a1a1a',
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
+    backgroundColor: "#1a1a1a",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  detailHeaderContent: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    gap: 12,
-    flex: 1,
-  },
-  detailHeaderIcon: {
-    fontSize: 32,
-  },
-  detailHeaderTitle: {
-    fontSize: 24,
-    fontWeight: '700' as const,
-    color: '#ffffff',
-    letterSpacing: -0.5,
-  },
-  detailHeaderSubtitle: {
-    fontSize: 14,
-    color: '#999999',
-    marginTop: 2,
-  },
-  gridContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-  },
-  gridRow: {
-    gap: 20,
-    marginBottom: 20,
-  },
+  detailHeaderContent: { flexDirection: "row", gap: 12 },
+  detailHeaderIcon: { fontSize: 32 },
+  detailHeaderTitle: { fontSize: 24, color: "#fff", fontWeight: "700" },
+  detailHeaderSubtitle: { color: "#999" },
+
+  gridContent: { paddingHorizontal: 20, paddingBottom: 20 },
+  gridRow: { gap: 20, marginBottom: 20 },
+
   wallpaperCard: {
     width: ITEM_WIDTH,
     height: ITEM_WIDTH * 1.6,
     borderRadius: 16,
-    overflow: 'hidden' as const,
-    backgroundColor: '#1a1a1a',
+    overflow: "hidden",
+    backgroundColor: "#1a1a1a",
   },
-  wallpaperImage: {
-    width: '100%',
-    height: '100%',
-  },
+  wallpaperImage: { width: "100%", height: "100%" },
   wallpaperOverlay: {
-    position: 'absolute' as const,
+    position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
     padding: 12,
-    backgroundColor: 'rgba(0,0,0,0.7)',
+    backgroundColor: "rgba(0,0,0,0.7)",
   },
-  wallpaperTitle: {
-    fontSize: 14,
-    fontWeight: '600' as const,
-    color: '#ffffff',
-  },
+  wallpaperTitle: { color: "#fff", fontWeight: "600" },
 });
+
+
