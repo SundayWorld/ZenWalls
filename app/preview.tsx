@@ -1,24 +1,50 @@
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useState, useRef } from "react";
-import { StyleSheet, Text, View, Pressable, Platform, Alert, ActivityIndicator, Animated } from "react-native";
+import React, { useState, useRef, useMemo } from "react";
+import {
+  StyleSheet,
+  Text,
+  View,
+  Pressable,
+  Platform,
+  Alert,
+  ActivityIndicator,
+  Animated,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { X, Download, Smartphone } from "lucide-react-native";
 import * as MediaLibrary from "expo-media-library";
-import { File, Paths } from "expo-file-system";
+import { Asset } from "expo-asset";
+import { WALLPAPERS } from "@/constants/wallpapers";
 
 export default function PreviewScreen() {
-  const params = useLocalSearchParams<{ id: string; title: string; imageUrl: string }>();
+  const params = useLocalSearchParams<{ id: string; title: string }>();
+
+  const wallpaper = useMemo(
+    () => WALLPAPERS.find(w => w.id === params.id),
+    [params.id]
+  );
+
   const [isDownloading, setIsDownloading] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const toastOpacity = useRef(new Animated.Value(0)).current;
   const toastTranslateY = useRef(new Animated.Value(20)).current;
 
+  if (!wallpaper) {
+    return (
+      <View style={styles.container}>
+        <Text style={{ color: "#fff", textAlign: "center", marginTop: 60 }}>
+          Wallpaper not found
+        </Text>
+      </View>
+    );
+  }
+
   const showToast = (message: string) => {
     setToastMessage(message);
     toastOpacity.setValue(0);
     toastTranslateY.setValue(20);
-    
+
     Animated.parallel([
       Animated.timing(toastOpacity, {
         toValue: 1,
@@ -48,45 +74,34 @@ export default function PreviewScreen() {
     }, 2000);
   };
 
+  const saveToGallery = async () => {
+    const { status } = await MediaLibrary.requestPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert(
+        "Permission Required",
+        "Please allow access to save wallpapers."
+      );
+      return;
+    }
+
+    const assetSource = Asset.fromModule(wallpaper.image);
+    await assetSource.downloadAsync();
+
+    const asset = await MediaLibrary.createAssetAsync(
+      assetSource.localUri!
+    );
+    await MediaLibrary.createAlbumAsync("ZenWalls", asset, false);
+  };
+
   const handleDownload = async () => {
     if (isDownloading) return;
 
     try {
       setIsDownloading(true);
-      console.log("Starting download...");
-
-      if (Platform.OS === "web") {
-        const link = document.createElement("a");
-        link.href = params.imageUrl;
-        link.download = `${params.title}.jpg`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        Alert.alert("Success", "Wallpaper downloaded!");
-        return;
-      }
-
-      const { status } = await MediaLibrary.requestPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert("Permission Required", "Please grant permission to save wallpapers to your gallery.");
-        setIsDownloading(false);
-        return;
-      }
-
-      const fileName = `${params.title.replace(/[^a-z0-9]/gi, '_')}_${Date.now()}.jpg`;
-      const destination = new File(Paths.cache, fileName);
-      console.log("Downloading to:", destination.uri);
-
-      const downloadedFile = await File.downloadFileAsync(params.imageUrl, destination);
-      console.log("Download complete:", downloadedFile.uri);
-
-      const asset = await MediaLibrary.createAssetAsync(downloadedFile.uri);
-      await MediaLibrary.createAlbumAsync("ZenWalls", asset, false);
-
+      await saveToGallery();
       showToast("Saved to gallery");
     } catch (error) {
-      console.error("Download error:", error);
-      Alert.alert("Error", "Failed to download wallpaper. Please try again.");
+      Alert.alert("Error", "Failed to save wallpaper.");
     } finally {
       setIsDownloading(false);
     }
@@ -94,102 +109,72 @@ export default function PreviewScreen() {
 
   const handleSetWallpaper = async () => {
     if (Platform.OS === "web") {
-      showToast("Wallpaper applied");
+      showToast("Wallpaper ready");
       return;
     }
 
     try {
-      const { status } = await MediaLibrary.requestPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert("Permission Required", "Please grant permission to save wallpapers to your gallery.");
-        return;
-      }
+      await saveToGallery();
+      showToast("Wallpaper saved");
 
-      const fileName = `${params.title.replace(/[^a-z0-9]/gi, '_')}_${Date.now()}.jpg`;
-      const destination = new File(Paths.cache, fileName);
-      const downloadedFile = await File.downloadFileAsync(params.imageUrl, destination);
-      const asset = await MediaLibrary.createAssetAsync(downloadedFile.uri);
-      await MediaLibrary.createAlbumAsync("ZenWalls", asset, false);
-
-      showToast("Wallpaper applied");
-      
       setTimeout(() => {
         Alert.alert(
           "Complete Setup",
-          "To finish setting your wallpaper:\n\n1. Open your Gallery/Photos app\n2. Find the image in ZenWalls album\n3. Tap 'Set as wallpaper' or 'Use as'\n4. Choose Home screen, Lock screen, or Both",
-          [{ text: "OK" }]
+          "Open your Gallery → ZenWalls album → Set as wallpaper."
         );
-      }, 2500);
+      }, 2000);
     } catch (error) {
-      console.error("Set wallpaper error:", error);
-      Alert.alert("Error", "Failed to prepare wallpaper. Please try again.");
+      Alert.alert("Error", "Failed to prepare wallpaper.");
     }
   };
 
   return (
     <View style={styles.container}>
       <Image
-        source={{ uri: params.imageUrl }}
+        source={wallpaper.image}
         style={styles.image}
         contentFit="cover"
       />
 
       <SafeAreaView edges={["top", "bottom"]} style={styles.safeArea}>
         <View style={styles.header}>
-          <Pressable
-            style={({ pressed }) => [
-              styles.closeButton,
-              pressed && styles.buttonPressed,
-            ]}
-            onPress={() => router.back()}
-            android_ripple={{ color: "rgba(255,255,255,0.2)" }}
-            testID="close-button"
-          >
+          <Pressable style={styles.closeButton} onPress={() => router.back()}>
             <X color="#ffffff" size={24} />
           </Pressable>
         </View>
 
         <View style={styles.footer}>
           <View style={styles.info}>
-            <Text style={styles.title} numberOfLines={1}>
-              {params.title}
-            </Text>
+            <Text style={styles.title}>{wallpaper.title}</Text>
           </View>
 
           <View style={styles.actions}>
             <Pressable
-              style={({ pressed }) => [
-                styles.actionButton,
-                styles.secondaryButton,
-                pressed && styles.buttonPressed,
-              ]}
+              style={[styles.actionButton, styles.secondaryButton]}
               onPress={handleSetWallpaper}
-              android_ripple={{ color: "rgba(255,255,255,0.1)" }}
-              testID="set-wallpaper-button"
             >
               <Smartphone color="#ffffff" size={20} />
-              <Text style={styles.secondaryButtonText}>Set as Wallpaper</Text>
+              <Text style={styles.secondaryButtonText}>
+                Set as Wallpaper
+              </Text>
             </Pressable>
 
             <Pressable
-              style={({ pressed }) => [
+              style={[
                 styles.actionButton,
                 styles.primaryButton,
-                pressed && styles.buttonPressed,
                 isDownloading && styles.buttonDisabled,
               ]}
               onPress={handleDownload}
               disabled={isDownloading}
-              android_ripple={{ color: "rgba(0,0,0,0.1)" }}
-              testID="download-button"
             >
               {isDownloading ? (
-                <ActivityIndicator color="#000000" size="small" />
+                <ActivityIndicator color="#000000" />
               ) : (
                 <Download color="#000000" size={20} />
               )}
               <Text style={styles.primaryButtonText}>
-                {isDownloading ? "Downloading..." : "Download"}
+                {isDownloading ? "Saving..." : "Download"}
               </Text>
             </Pressable>
           </View>
@@ -214,103 +199,59 @@ export default function PreviewScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#000000",
-  },
-  image: {
-    width: "100%",
-    height: "100%",
-    position: "absolute" as const,
-  },
-  safeArea: {
-    flex: 1,
-    justifyContent: "space-between" as const,
-  },
-  header: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-  },
+  container: { flex: 1, backgroundColor: "#000" },
+  image: { width: "100%", height: "100%", position: "absolute" },
+  safeArea: { flex: 1, justifyContent: "space-between" },
+
+  header: { padding: 16 },
   closeButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
     backgroundColor: "rgba(0,0,0,0.6)",
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  footer: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-    gap: 16,
-  },
+
+  footer: { padding: 20, gap: 16 },
   info: {
     backgroundColor: "rgba(0,0,0,0.8)",
     borderRadius: 16,
     padding: 20,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: "700" as const,
-    color: "#ffffff",
-  },
-  actions: {
-    gap: 12,
-  },
+  title: { fontSize: 24, fontWeight: "700", color: "#fff" },
+
+  actions: { gap: 12 },
   actionButton: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 10,
     paddingVertical: 16,
-    paddingHorizontal: 24,
     borderRadius: 16,
-    minHeight: 56,
   },
-  primaryButton: {
-    backgroundColor: "#ffffff",
-  },
+  primaryButton: { backgroundColor: "#fff" },
   secondaryButton: {
     backgroundColor: "rgba(255,255,255,0.15)",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.2)",
   },
-  primaryButtonText: {
-    fontSize: 16,
-    fontWeight: "600" as const,
-    color: "#000000",
-  },
-  secondaryButtonText: {
-    fontSize: 16,
-    fontWeight: "600" as const,
-    color: "#ffffff",
-  },
-  buttonPressed: {
-    opacity: 0.7,
-  },
-  buttonDisabled: {
-    opacity: 0.5,
-  },
+  primaryButtonText: { color: "#000", fontWeight: "600" },
+  secondaryButtonText: { color: "#fff", fontWeight: "600" },
+  buttonDisabled: { opacity: 0.5 },
+
   toast: {
-    position: "absolute" as const,
+    position: "absolute",
     bottom: 100,
     left: 20,
     right: 20,
-    backgroundColor: "rgba(255,255,255,0.95)",
+    backgroundColor: "#fff",
     borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    padding: 14,
+    alignItems: "center",
   },
-  toastText: {
-    fontSize: 15,
-    fontWeight: "600" as const,
-    color: "#000000",
-  },
+  toastText: { color: "#000", fontWeight: "600" },
 });
+
+
+
