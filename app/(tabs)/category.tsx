@@ -42,7 +42,7 @@ export default function CategoryScreen() {
 
   // ✅ FIX 2: Predictable back navigation
   const handleBack = () => {
-    router.replace("/category");
+    router.replace("/"); // Returns to home screen
   };
 
   /* ================= CATEGORY DETAIL ================= */
@@ -145,10 +145,7 @@ export default function CategoryScreen() {
                       <Text style={styles.categoryIcon}>{category.icon}</Text>
                       <View>
                         <Text
-                          style={[
-                            styles.categoryName,
-                            isAmoled && styles.categoryNameFeatured,
-                          ]}
+                          style={[styles.categoryName, isAmoled && styles.categoryNameFeatured]}
                         >
                           {category.name}
                         </Text>
@@ -243,5 +240,6 @@ const styles = StyleSheet.create({
   },
   wallpaperTitle: { color: "#fff", fontWeight: "600" },
 });
+
 
 
