@@ -33,7 +33,7 @@ export default function PreviewScreen() {
   if (!wallpaper) {
     return (
       <View style={styles.container}>
-        <Text style={{ color: "#fff", textAlign: "center", marginTop: 60 }}>
+        <Text style={{ color: "#fff", marginTop: 60, textAlign: "center" }}>
           Wallpaper not found
         </Text>
       </View>
@@ -75,19 +75,28 @@ export default function PreviewScreen() {
   };
 
   const saveToGallery = async () => {
-    const { status } = await MediaLibrary.requestPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert("Permission required", "Allow access to save wallpapers.");
+    const permission = await MediaLibrary.requestPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert(
+        "Permission required",
+        "Allow access to save wallpapers."
+      );
       return;
     }
 
-    const assetSource = Asset.fromModule(wallpaper.image);
-    await assetSource.downloadAsync();
+    // ✅ Load bundled image correctly
+    const asset = Asset.fromModule(wallpaper.image);
+    await asset.downloadAsync();
 
-    const asset = await MediaLibrary.createAssetAsync(
-      assetSource.localUri!
-    );
-    await MediaLibrary.createAlbumAsync("ZenWalls", asset, false);
+    if (!asset.localUri) {
+      throw new Error("Image not available");
+    }
+
+    // ✅ Save directly to gallery (WORKS on Android 10+)
+    const savedAsset = await MediaLibrary.createAssetAsync(asset.localUri);
+
+    // Optional album (safe)
+    await MediaLibrary.createAlbumAsync("ZenWalls", savedAsset, false);
   };
 
   const handleSave = async () => {
@@ -97,7 +106,8 @@ export default function PreviewScreen() {
       setSaving(true);
       await saveToGallery();
       showToast("Saved to gallery");
-    } catch {
+    } catch (err) {
+      console.log(err);
       Alert.alert("Error", "Failed to save wallpaper.");
     } finally {
       setSaving(false);
@@ -106,11 +116,7 @@ export default function PreviewScreen() {
 
   return (
     <View style={styles.container}>
-      <Image
-        source={wallpaper.image}
-        style={styles.image}
-        contentFit="cover"
-      />
+      <Image source={wallpaper.image} style={styles.image} contentFit="cover" />
 
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
@@ -124,26 +130,24 @@ export default function PreviewScreen() {
             <Text style={styles.title}>{wallpaper.title}</Text>
           </View>
 
-          <View style={styles.actions}>
-            <Pressable
-              style={[
-                styles.button,
-                styles.primary,
-                saving && styles.disabled,
-              ]}
-              onPress={handleSave}
-              disabled={saving}
-            >
-              {saving ? (
-                <ActivityIndicator color="#000" />
-              ) : (
-                <Download size={20} color="#000" />
-              )}
-              <Text style={styles.primaryText}>
-                {saving ? "Saving…" : "Save to Gallery"}
-              </Text>
-            </Pressable>
-          </View>
+          <Pressable
+            style={[
+              styles.button,
+              styles.primary,
+              saving && styles.disabled,
+            ]}
+            onPress={handleSave}
+            disabled={saving}
+          >
+            {saving ? (
+              <ActivityIndicator color="#000" />
+            ) : (
+              <Download size={20} color="#000" />
+            )}
+            <Text style={styles.primaryText}>
+              {saving ? "Saving…" : "Save to Gallery"}
+            </Text>
+          </Pressable>
         </View>
       </SafeAreaView>
 
@@ -163,7 +167,7 @@ export default function PreviewScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#000" },
-  image: { width: "100%", height: "100%", position: "absolute" },
+  image: { position: "absolute", width: "100%", height: "100%" },
 
   safeArea: { flex: 1, justifyContent: "space-between" },
 
@@ -178,15 +182,12 @@ const styles = StyleSheet.create({
   },
 
   footer: { padding: 20, gap: 16 },
-
   info: {
     backgroundColor: "rgba(0,0,0,0.75)",
     borderRadius: 16,
     padding: 20,
   },
   title: { color: "#fff", fontSize: 24, fontWeight: "700" },
-
-  actions: { gap: 12 },
 
   button: {
     flexDirection: "row",
@@ -196,7 +197,6 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 16,
   },
-
   primary: { backgroundColor: "#fff" },
   primaryText: { color: "#000", fontWeight: "600" },
   disabled: { opacity: 0.5 },
@@ -213,6 +213,11 @@ const styles = StyleSheet.create({
   },
   toastText: { color: "#000", fontWeight: "600" },
 });
+
+
+
+
+
 
 
 

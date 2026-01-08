@@ -28,7 +28,7 @@
 
     "android": {
       "package": "app.zenwalls.wallpapers",
-      "versionCode": 15,
+      "versionCode": 16,
 
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-foreground.png",

@@ -18,194 +18,127 @@ const { width } = Dimensions.get("window");
 const ITEM_WIDTH = (width - 60) / 2;
 
 export default function CategoryScreen() {
-  const params = useLocalSearchParams<{ categoryId?: string }>();
-  const selectedCategoryId = params.categoryId;
+  const { categoryId } = useLocalSearchParams<{ categoryId?: string }>();
 
-  const getCategoryCount = (categoryId: string) =>
-    WALLPAPERS.filter(w => w.category === categoryId).length;
+  const wallpapers = categoryId
+    ? WALLPAPERS.filter(w => w.category === categoryId)
+    : [];
 
-  // ✅ FIX 1: Prevent redundant replace
-  const handleCategoryPress = (categoryId: string) => {
-    if (selectedCategoryId === categoryId) return;
-    router.replace(`/category?categoryId=${categoryId}`);
+  /* ===================== ACTIONS ===================== */
+
+  // ⬅ From Categories → Home
+  const backToHome = () => {
+    router.replace("/");
   };
 
-  const handleWallpaperPress = (wallpaper: typeof WALLPAPERS[number]) => {
-    router.push({
-      pathname: "/preview",
-      params: {
-        id: wallpaper.id,
-        title: wallpaper.title,
-      },
-    });
+  // ⬅ From Category list → Categories
+  const backToCategories = () => {
+    router.replace("/category");
   };
 
-  // ✅ FIX 2: Predictable back navigation
-  const handleBack = () => {
-    router.replace("/"); // Returns to home screen
+  const openCategory = (id: string) => {
+    router.push(`/category?categoryId=${id}`);
   };
 
-  /* ================= CATEGORY DETAIL ================= */
-  if (selectedCategoryId) {
-    const category = CATEGORIES.find(c => c.id === selectedCategoryId);
-    const categoryWallpapers = WALLPAPERS.filter(
-      w => w.category === selectedCategoryId
-    );
+  const openPreview = (id: string) => {
+    router.push(`/preview?id=${id}`);
+  };
 
+  /* ===================== CATEGORY LIST ===================== */
+
+  if (!categoryId) {
     return (
       <View style={styles.container}>
-        <SafeAreaView edges={["top", "bottom"]} style={styles.safeArea}>
-          <View style={styles.detailHeader}>
-            <Pressable
-              onPress={handleBack}
-              style={({ pressed }) => [
-                styles.backButton,
-                pressed && styles.pressed,
-              ]}
-              android_ripple={{ color: "rgba(255,255,255,0.1)" }}
-            >
-              <ArrowLeft color="#fff" size={24} />
+        <SafeAreaView style={styles.safeArea}>
+          {/* HEADER */}
+          <View style={styles.header}>
+            <Pressable onPress={backToHome} style={styles.backButton}>
+              <ArrowLeft size={24} color="#fff" />
             </Pressable>
-
-            <View style={styles.detailHeaderContent}>
-              <Text style={styles.detailHeaderIcon}>{category?.icon}</Text>
-              <View>
-                <Text style={styles.detailHeaderTitle}>{category?.name}</Text>
-                <Text style={styles.detailHeaderSubtitle}>
-                  {categoryWallpapers.length} wallpapers
-                </Text>
-              </View>
-            </View>
+            <Text style={styles.headerTitle}>Categories</Text>
           </View>
 
-          <FlatList
-            data={categoryWallpapers}
-            keyExtractor={item => item.id}
-            numColumns={2}
-            contentContainerStyle={styles.gridContent}
-            columnWrapperStyle={styles.gridRow}
-            showsVerticalScrollIndicator={false}
-            removeClippedSubviews
-            renderItem={({ item }) => (
-              <Pressable
-                onPress={() => handleWallpaperPress(item)}
-                style={({ pressed }) => [
-                  styles.wallpaperCard,
-                  pressed && styles.pressed,
-                ]}
-              >
-                <Image
-                  source={item.image}
-                  style={styles.wallpaperImage}
-                  contentFit="cover"
-                />
-                <View style={styles.wallpaperOverlay}>
-                  <Text style={styles.wallpaperTitle} numberOfLines={2}>
-                    {item.title}
-                  </Text>
-                </View>
-              </Pressable>
-            )}
-          />
+          <ScrollView contentContainerStyle={styles.list}>
+            {CATEGORIES.map(cat => {
+              const count = WALLPAPERS.filter(
+                w => w.category === cat.id
+              ).length;
+
+              return (
+                <Pressable
+                  key={cat.id}
+                  style={styles.categoryCard}
+                  onPress={() => openCategory(cat.id)}
+                >
+                  <View style={styles.categoryRow}>
+                    <Text style={styles.icon}>{cat.icon}</Text>
+                    <View>
+                      <Text style={styles.name}>{cat.name}</Text>
+                      <Text style={styles.count}>{count} wallpapers</Text>
+                    </View>
+                  </View>
+                  <ChevronRight size={20} color="#666" />
+                </Pressable>
+              );
+            })}
+          </ScrollView>
         </SafeAreaView>
       </View>
     );
   }
 
-  /* ================= CATEGORY LIST ================= */
+  /* ===================== CATEGORY DETAIL ===================== */
+
   return (
     <View style={styles.container}>
-      <SafeAreaView edges={["top", "bottom"]} style={styles.safeArea}>
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.header}>
-            <Text style={styles.headerTitle}>Categories</Text>
-            <Text style={styles.headerSubtitle}>Browse by collection</Text>
-          </View>
+      <SafeAreaView style={styles.safeArea}>
+        {/* HEADER */}
+        <View style={styles.header}>
+          <Pressable onPress={backToCategories} style={styles.backButton}>
+            <ArrowLeft size={24} color="#fff" />
+          </Pressable>
+          <Text style={styles.headerTitle}>
+            {CATEGORIES.find(c => c.id === categoryId)?.name}
+          </Text>
+        </View>
 
-          <View style={styles.categoriesList}>
-            {CATEGORIES.map(category => {
-              const count = getCategoryCount(category.id);
-              const isAmoled = category.id === "amoled";
-
-              return (
-                <Pressable
-                  key={category.id}
-                  onPress={() => handleCategoryPress(category.id)}
-                  style={({ pressed }) => [
-                    styles.categoryCard,
-                    isAmoled && styles.categoryCardFeatured,
-                    pressed && styles.pressed,
-                  ]}
-                >
-                  <View style={styles.categoryContent}>
-                    <View style={styles.categoryLeft}>
-                      <Text style={styles.categoryIcon}>{category.icon}</Text>
-                      <View>
-                        <Text
-                          style={[styles.categoryName, isAmoled && styles.categoryNameFeatured]}
-                        >
-                          {category.name}
-                        </Text>
-                        <Text style={styles.categoryCount}>
-                          {count} wallpapers
-                        </Text>
-                      </View>
-                    </View>
-                    <ChevronRight
-                      size={20}
-                      color={isAmoled ? "#000" : "#666"}
-                    />
-                  </View>
-                </Pressable>
-              );
-            })}
-          </View>
-        </ScrollView>
+        <FlatList
+          data={wallpapers}
+          keyExtractor={item => item.id}
+          numColumns={2}
+          contentContainerStyle={styles.grid}
+          columnWrapperStyle={{ gap: 20 }}
+          renderItem={({ item }) => (
+            <Pressable
+              style={styles.wallpaper}
+              onPress={() => openPreview(item.id)}
+            >
+              <Image
+                source={item.image}
+                style={styles.image}
+                contentFit="cover"
+              />
+            </Pressable>
+          )}
+        />
       </SafeAreaView>
     </View>
   );
 }
 
-/* ================= STYLES ================= */
+/* ===================== STYLES ===================== */
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#000" },
   safeArea: { flex: 1 },
-  scrollContent: { paddingBottom: 20 },
 
-  header: { padding: 20 },
-  headerTitle: { fontSize: 32, fontWeight: "700", color: "#fff" },
-  headerSubtitle: { fontSize: 16, color: "#999" },
-
-  categoriesList: { paddingHorizontal: 20, gap: 12 },
-  categoryCard: {
-    backgroundColor: "#1a1a1a",
-    borderRadius: 16,
-    padding: 20,
-  },
-  categoryCardFeatured: { backgroundColor: "#fff" },
-  pressed: { opacity: 0.7 },
-
-  categoryContent: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  categoryLeft: { flexDirection: "row", gap: 16 },
-  categoryIcon: { fontSize: 32 },
-  categoryName: { fontSize: 18, color: "#fff", fontWeight: "600" },
-  categoryNameFeatured: { color: "#000" },
-  categoryCount: { color: "#666" },
-
-  detailHeader: {
+  header: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 20,
     gap: 16,
+    padding: 20,
   },
+
   backButton: {
     width: 44,
     height: 44,
@@ -214,32 +147,42 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  detailHeaderContent: { flexDirection: "row", gap: 12 },
-  detailHeaderIcon: { fontSize: 32 },
-  detailHeaderTitle: { fontSize: 24, color: "#fff", fontWeight: "700" },
-  detailHeaderSubtitle: { color: "#999" },
 
-  gridContent: { paddingHorizontal: 20, paddingBottom: 20 },
-  gridRow: { gap: 20, marginBottom: 20 },
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#fff",
+  },
 
-  wallpaperCard: {
+  list: { padding: 20, gap: 12 },
+
+  categoryCard: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#1a1a1a",
+    borderRadius: 16,
+    padding: 20,
+  },
+
+  categoryRow: { flexDirection: "row", gap: 16 },
+  icon: { fontSize: 32 },
+  name: { color: "#fff", fontSize: 18, fontWeight: "600" },
+  count: { color: "#777" },
+
+  grid: { padding: 20, gap: 20 },
+
+  wallpaper: {
     width: ITEM_WIDTH,
     height: ITEM_WIDTH * 1.6,
     borderRadius: 16,
     overflow: "hidden",
-    backgroundColor: "#1a1a1a",
   },
-  wallpaperImage: { width: "100%", height: "100%" },
-  wallpaperOverlay: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 12,
-    backgroundColor: "rgba(0,0,0,0.7)",
-  },
-  wallpaperTitle: { color: "#fff", fontWeight: "600" },
+
+  image: { width: "100%", height: "100%" },
 });
+
+
 
 
 
