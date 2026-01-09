@@ -1,8 +1,8 @@
 {
   "expo": {
     "name": "ZenWalls",
-    "slug": "zenwallspapers",  // Updated slug
-    "version": "1.0.1",
+    "slug": "zenwalls-gallery",
+    "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "rork-app",
@@ -15,15 +15,15 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "app.zenwalls.wallpapers",
+      "bundleIdentifier": "app.zenwalls.wallpapers2",
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "Allow ZenWalls to access your photos.",
         "NSPhotoLibraryAddUsageDescription": "Allow ZenWalls to save photos."
       }
     },
     "android": {
-      "package": "app.zenwalls.wallpapers",
-      "versionCode": 16,
+      "package": "app.zenwalls.wallpapers2",
+      "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-foreground.png",
         "backgroundImage": "./assets/images/adaptive-background.png"
@@ -33,13 +33,7 @@
         "READ_MEDIA_VISUAL_USER_SELECTED",
         "ACCESS_MEDIA_LOCATION",
         "INTERNET"
-      ],
-      "assetPacks": [
-        {
-          "name": "wallpapers",
-          "deliveryType": "on-demand",
-          "assets": ["assets/wallpapers/**"]
-        }
+       
       ]
     },
     "web": {
@@ -66,12 +60,14 @@
     "experiments": {
       "typedRoutes": true
     },
+    "owner": "sunnyapp",
     "extra": {
+      "router": {
+        "origin": "https://rork.com/"
+      },
       "eas": {
-        "projectId": 
+        "projectId": "892e32e1-b80b-4183-9ccd-9e71e8ea9108"
       }
     }
   }
 }
-
-
