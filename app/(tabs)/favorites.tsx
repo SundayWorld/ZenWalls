@@ -1,41 +1,48 @@
-import { View, Text, FlatList, Image, Pressable, StyleSheet } from "react-native";
-import { WALLPAPERS } from "../../constants/Wallpapers";
-import { getFavorites } from "../../utils/favorites";
+import { View, Text, FlatList, Pressable, StyleSheet } from "react-native";
 import { useEffect, useState } from "react";
+import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 
-export default function Favorites() {
-  const [items, setItems] = useState<any[]>([]);
+import { getFavorites } from "../../utils/favorites";
+import { WALLPAPERS } from "../../constants/wallpapers";
+
+export default function FavoritesScreen() {
+  const [favorites, setFavorites] = useState<string[]>([]);
   const router = useRouter();
 
-  async function load() {
-    const favIds = await getFavorites();
-    const favWallpapers = WALLPAPERS.filter(w => favIds.includes(w.id));
-    setItems(favWallpapers);
-  }
-
   useEffect(() => {
-    const sub = setInterval(load, 500);
-    return () => clearInterval(sub);
+    load();
   }, []);
 
-  if (items.length === 0) {
+  const load = async () => {
+    const ids = await getFavorites();
+    setFavorites(ids);
+  };
+
+  const favoriteWallpapers = WALLPAPERS.filter(w =>
+    favorites.includes(w.id)
+  );
+
+  if (favoriteWallpapers.length === 0) {
     return (
       <View style={styles.empty}>
-        <Text style={styles.text}>No favorites yet ❤️</Text>
+        <Text style={styles.emptyText}>No favorites yet ❤️</Text>
       </View>
     );
   }
 
   return (
     <FlatList
-      data={items}
-      numColumns={2}
+      data={favoriteWallpapers}
       keyExtractor={(item) => item.id}
+      numColumns={2}
       contentContainerStyle={{ padding: 10 }}
       renderItem={({ item }) => (
-        <Pressable onPress={() => router.push(`/preview?id=${item.id}`)}>
-          <Image source={item.image} style={styles.img} />
+        <Pressable
+          style={styles.card}
+          onPress={() => router.push(`/preview?id=${item.id}`)}
+        >
+          <Image source={item.image} style={styles.image} />
         </Pressable>
       )}
     />
@@ -43,19 +50,26 @@ export default function Favorites() {
 }
 
 const styles = StyleSheet.create({
-  img: {
-    width: 180,
-    height: 320,
-    borderRadius: 14,
+  card: {
+    flex: 1,
     margin: 6,
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+  image: {
+    width: "100%",
+    height: 250,
   },
   empty: {
     flex: 1,
-    alignItems: "center",
     justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#000",
   },
-  text: {
-    color: "#aaa",
+  emptyText: {
+    color: "#fff",
     fontSize: 18,
+    opacity: 0.7,
   },
 });
+

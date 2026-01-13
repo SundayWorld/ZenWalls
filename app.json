@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "ZenWalls",
-    "slug": "zenwalls-gallery",
+    "slug": "zenwalls-gallery",  // Make sure this slug matches your EAS project
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -32,9 +32,9 @@
         "READ_MEDIA_IMAGES",
         "READ_MEDIA_VISUAL_USER_SELECTED",
         "ACCESS_MEDIA_LOCATION",
-        "INTERNET"
-       "READ_EXTERNAL_STORAGE",
-      "WRITE_EXTERNAL_STORAGE"
+        "INTERNET",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
       ]
     },
     "web": {
@@ -72,3 +72,5 @@
     }
   }
 }
+
+
