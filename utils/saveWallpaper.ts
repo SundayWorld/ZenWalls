@@ -1,48 +1,53 @@
 import * as FileSystem from "expo-file-system";
 import * as MediaLibrary from "expo-media-library";
 import { Asset } from "expo-asset";
-import { Alert } from "react-native";
+import { Alert, Platform } from "react-native";
 
 export async function saveWallpaper(image: any) {
   try {
-    // Request permission to access the gallery
-    const { status } = await MediaLibrary.requestPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert("Permission required", "Storage permission is needed to save wallpapers.");
+    // 1️⃣ Request permission
+    const permission = await MediaLibrary.requestPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert(
+        "Permission required",
+        "Allow storage permission to save wallpapers."
+      );
       return;
     }
 
-    // Load bundled asset
+    // 2️⃣ Load bundled image
     const asset = Asset.fromModule(image);
     await asset.downloadAsync();
 
-    // Get the file URI (use localUri for bundled assets)
-    const fileUri = asset.localUri || asset.uri;
-    const fileName = fileUri.split("/").pop()!;
-    
-    // Save the image in Pictures directory (public directory for saving images)
-    const dest = FileSystem.documentDirectory + "Pictures/" + fileName;
-
-    // Make sure directory exists
-    const dirInfo = await FileSystem.readDirectoryAsync(FileSystem.documentDirectory + "Pictures");
-    if (!dirInfo.includes(fileName)) {
-      await FileSystem.makeDirectoryAsync(FileSystem.documentDirectory + "Pictures", { intermediates: true });
+    const sourceUri = asset.localUri || asset.uri;
+    if (!sourceUri) {
+      throw new Error("Asset URI not found");
     }
 
-    // Copy the image to the Pictures directory
+    // 3️⃣ Copy to app document directory
+    const fileName = sourceUri.split("/").pop();
+    const destUri = FileSystem.documentDirectory + fileName;
+
     await FileSystem.copyAsync({
-      from: fileUri,
-      to: dest,
+      from: sourceUri,
+      to: destUri,
     });
 
-    // Save to gallery
-    const assetUri = await MediaLibrary.createAssetAsync(dest);
-    await MediaLibrary.addAssetsToAlbumAsync([assetUri], await MediaLibrary.getAlbumAsync("ZenWalls"), false);
+    // 4️⃣ Create MediaLibrary asset (THIS IS THE FIX)
+    const mediaAsset = await MediaLibrary.createAssetAsync(destUri);
+
+    // 5️⃣ Save to Pictures album
+    await MediaLibrary.createAlbumAsync(
+      "ZenWalls",
+      mediaAsset,
+      false
+    );
 
     Alert.alert("Saved", "Wallpaper saved to gallery 🎉");
-  } catch (e) {
-    console.log("Save error:", e);
+  } catch (error) {
+    console.log("Save error:", error);
     Alert.alert("Error", "Failed to save wallpaper.");
   }
 }
+
 
