@@ -18,7 +18,7 @@ export const CATEGORIES = [
 export const WALLPAPERS = [
   // AMOLED category (10 wallpapers)
   { id: "amoled-1", title: "AMOLED 1", category: "amoled", image: require("../assets/wallpapers/amoled/amoled_1.webp") },
-  { id: "amoled-2", title: "AMOLED 2", category: "amoled", image: require("../assets/wallpapers/amoled/amoled_2.webp") },
+  {id: "amoled-2", title: "AMOLED 2", category: "amoled", image: require("../assets/wallpapers/amoled/amoled_2.webp") },
   { id: "amoled-3", title: "AMOLED 3", category: "amoled", image: require("../assets/wallpapers/amoled/amoled_3.webp") },
   { id: "amoled-4", title: "AMOLED 4", category: "amoled", image: require("../assets/wallpapers/amoled/amoled_4.webp") },
   { id: "amoled-5", title: "AMOLED 5", category: "amoled", image: require("../assets/wallpapers/amoled/amoled_5.webp") },
