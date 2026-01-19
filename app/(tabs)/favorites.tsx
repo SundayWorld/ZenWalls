@@ -1,7 +1,8 @@
-import { View, Text, FlatList, Pressable, StyleSheet, SafeAreaView } from "react-native";
+import { View, Text, FlatList, Pressable, StyleSheet } from "react-native";
 import { useEffect, useState } from "react";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { getFavorites } from "../../utils/favorites";
 import { WALLPAPERS } from "../../constants/wallpapers";
@@ -25,7 +26,7 @@ export default function FavoritesScreen() {
 
   if (favoriteWallpapers.length === 0) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={styles.safe}>
         <View style={styles.empty}>
           <Text style={styles.emptyText}>No favorites yet ❤️</Text>
         </View>
@@ -34,12 +35,13 @@ export default function FavoritesScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safe}>
       <FlatList
         data={favoriteWallpapers}
         keyExtractor={(item) => item.id}
         numColumns={2}
-        contentContainerStyle={{ padding: 10 }}
+        contentContainerStyle={styles.list}
+        showsVerticalScrollIndicator={false}
         renderItem={({ item }) => (
           <Pressable
             style={styles.card}
@@ -54,16 +56,18 @@ export default function FavoritesScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
+  safe: {
     flex: 1,
-    paddingTop: 10, // Adjust top padding if necessary
-    paddingBottom: 10, // Adjust bottom padding if necessary
     backgroundColor: "#000",
+  },
+  list: {
+    padding: 12,
+    paddingBottom: 90, // ✅ protects from bottom nav bar
   },
   card: {
     flex: 1,
     margin: 6,
-    borderRadius: 12,
+    borderRadius: 14,
     overflow: "hidden",
   },
   image: {
@@ -74,7 +78,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#000",
   },
   emptyText: {
     color: "#fff",
@@ -82,5 +85,6 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
 });
+
 
 

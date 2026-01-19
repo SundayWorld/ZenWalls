@@ -33,8 +33,7 @@
         "READ_MEDIA_VISUAL_USER_SELECTED",
         "ACCESS_MEDIA_LOCATION",
         "INTERNET",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE"
+        
       ]
     },
     "web": {
