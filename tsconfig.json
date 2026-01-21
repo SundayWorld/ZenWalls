@@ -7,11 +7,17 @@
       "@/*": [
         "./*"
       ]
-    }
+    },
+    "types": [
+      "react",
+      "react-native",
+      "expo"
+    ]
   },
   "include": [
     "**/*.ts",
     "**/*.tsx",
+    "./expo/types/**/*.d.ts",
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
   ]
