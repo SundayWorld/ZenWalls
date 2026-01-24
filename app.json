@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "ZenWalls",
-    "slug": "zenwalls-gallery", 
+    "slug": "zenwalls-gallery",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -23,7 +23,7 @@
     },
     "android": {
       "package": "app.zenwalls.wallpapers2",
-      "versionCode": 6,
+      "versionCode": 5,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-foreground.png",
         "backgroundImage": "./assets/images/adaptive-background.png"
@@ -33,11 +33,11 @@
         "READ_MEDIA_VISUAL_USER_SELECTED",
         "ACCESS_MEDIA_LOCATION",
         "INTERNET",
-        "READ_EXTERNAL_STORAGE",  // Add this permission
-        "WRITE_EXTERNAL_STORAGE", // Add this permission
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
       ],
-      "useNextNotificationsApi": false,  // Add for legacy storage support in Android 10
-      "requestLegacyExternalStorage": true  // Add for Infinix Android 10 support
+      "useNextNotificationsApi": false,
+      "requestLegacyExternalStorage": true
     },
     "web": {
       "favicon": "./assets/images/icon.png"
@@ -74,6 +74,7 @@
     }
   }
 }
+
 
 
 
