@@ -11,7 +11,9 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { X, Heart } from "lucide-react-native";
+
 import * as IntentLauncher from "expo-intent-launcher";
+import * as MediaLibrary from "expo-media-library";
 import { Asset } from "expo-asset";
 
 import { WALLPAPERS } from "@/constants/wallpapers";
@@ -81,8 +83,20 @@ export default function PreviewScreen() {
     }, 2000);
   };
 
+  /**
+   * ✅ SYSTEM WALLPAPER PICKER (ANDROID SAFE)
+   */
   const handleSetWallpaper = async () => {
     try {
+      const permission = await MediaLibrary.requestPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert(
+          "Permission required",
+          "Please allow access to set wallpaper."
+        );
+        return;
+      }
+
       const asset = Asset.fromModule(wallpaper.image);
       await asset.downloadAsync();
 
@@ -90,17 +104,20 @@ export default function PreviewScreen() {
         throw new Error("Wallpaper not available");
       }
 
+      // Convert file:// → content:// (Android requirement)
+      const savedAsset = await MediaLibrary.createAssetAsync(asset.localUri);
+
+      // Cast the ActivityAction to 'any' to bypass TypeScript error
       await IntentLauncher.startActivityAsync(
-        IntentLauncher.ActivityAction.SET_WALLPAPER,
+        IntentLauncher.ActivityAction.SET_WALLPAPER as any,
         {
-          data: asset.localUri,
-          flags: 1,
+          data: savedAsset.uri,
         }
       );
 
       showToast("Wallpaper picker opened");
-    } catch (err) {
-      console.log(err);
+    } catch (error) {
+      console.error(error);
       Alert.alert("Error", "Unable to open wallpaper picker.");
     }
   };
@@ -127,7 +144,10 @@ export default function PreviewScreen() {
             <Text style={styles.title}>{wallpaper.title}</Text>
           </View>
 
-          <Pressable style={styles.favoriteButton} onPress={handleFavoriteToggle}>
+          <Pressable
+            style={styles.favoriteButton}
+            onPress={handleFavoriteToggle}
+          >
             <Heart size={24} color={fav ? "red" : "#fff"} />
             <Text style={styles.favoriteText}>
               {fav ? "Unfavorite" : "Favorite"}
@@ -206,6 +226,9 @@ const styles = StyleSheet.create({
   },
   favoriteText: { color: "#fff", fontWeight: "600" },
 });
+
+
+
 
 
 
