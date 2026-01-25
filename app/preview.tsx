@@ -1,21 +1,21 @@
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useMemo, useRef, useState, useEffect } from "react";
+import React, { useMemo, useEffect, useRef, useState } from "react";
 import {
   StyleSheet,
   Text,
   View,
   Pressable,
-  ActivityIndicator,
   Animated,
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { X, Download, Heart } from "lucide-react-native";
-import * as MediaLibrary from "expo-media-library";
+import { X, Heart } from "lucide-react-native";
+import * as IntentLauncher from "expo-intent-launcher";
 import { Asset } from "expo-asset";
+
 import { WALLPAPERS } from "@/constants/wallpapers";
-import { toggleFavorite, isFavorite } from "../utils/favorites";  // Import the functions
+import { toggleFavorite, isFavorite } from "../utils/favorites";
 
 export default function PreviewScreen() {
   const params = useLocalSearchParams<{ id?: string }>();
@@ -25,23 +25,22 @@ export default function PreviewScreen() {
     [params.id]
   );
 
-  const [saving, setSaving] = useState(false);
+  const [fav, setFav] = useState(false);
   const [toast, setToast] = useState("");
-  const [fav, setFav] = useState(false);  // To track if the wallpaper is a favorite
 
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(20)).current;
 
   useEffect(() => {
     if (wallpaper) {
-      isFavorite(wallpaper.id).then(setFav); // Check if wallpaper is in favorites
+      isFavorite(wallpaper.id).then(setFav);
     }
   }, [wallpaper]);
 
   if (!wallpaper) {
     return (
       <View style={styles.container}>
-        <Text style={{ color: "#fff", marginTop: 60, textAlign: "center" }}>
+        <Text style={{ color: "#fff", marginTop: 60 }}>
           Wallpaper not found
         </Text>
       </View>
@@ -82,48 +81,34 @@ export default function PreviewScreen() {
     }, 2000);
   };
 
-  const saveToGallery = async () => {
-    const permission = await MediaLibrary.requestPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert("Permission required", "Allow access to save wallpapers.");
-      return;
-    }
-
-    const asset = Asset.fromModule(wallpaper.image);
-    await asset.downloadAsync();
-
-    if (!asset.localUri) {
-      throw new Error("Image not available");
-    }
-
-    const savedAsset = await MediaLibrary.createAssetAsync(asset.localUri);
-    await MediaLibrary.createAlbumAsync("ZenWalls", savedAsset, false);
-  };
-
-  const handleSave = async () => {
-    if (saving) return;
-
+  const handleSetWallpaper = async () => {
     try {
-      setSaving(true);
-      await saveToGallery();
-      showToast("Saved to gallery");
+      const asset = Asset.fromModule(wallpaper.image);
+      await asset.downloadAsync();
+
+      if (!asset.localUri) {
+        throw new Error("Wallpaper not available");
+      }
+
+      await IntentLauncher.startActivityAsync(
+        IntentLauncher.ActivityAction.SET_WALLPAPER,
+        {
+          data: asset.localUri,
+          flags: 1,
+        }
+      );
+
+      showToast("Wallpaper picker opened");
     } catch (err) {
       console.log(err);
-      Alert.alert("Error", "Failed to save wallpaper.");
-    } finally {
-      setSaving(false);
+      Alert.alert("Error", "Unable to open wallpaper picker.");
     }
   };
 
   const handleFavoriteToggle = async () => {
-    try {
-      await toggleFavorite(wallpaper.id);
-      setFav(!fav);  // Toggle the favorite state
-      showToast(fav ? "Removed from favorites" : "Added to favorites");
-    } catch (err) {
-      console.log(err);
-      Alert.alert("Error", "Failed to add/remove from favorites.");
-    }
+    await toggleFavorite(wallpaper.id);
+    setFav(!fav);
+    showToast(fav ? "Removed from favorites" : "Added to favorites");
   };
 
   return (
@@ -142,29 +127,15 @@ export default function PreviewScreen() {
             <Text style={styles.title}>{wallpaper.title}</Text>
           </View>
 
-          {/* Favorite Button */}
-          <Pressable
-            style={styles.favoriteButton}
-            onPress={handleFavoriteToggle}
-          >
+          <Pressable style={styles.favoriteButton} onPress={handleFavoriteToggle}>
             <Heart size={24} color={fav ? "red" : "#fff"} />
-            <Text style={styles.favoriteText}>{fav ? "Unfavorite" : "Favorite"}</Text>
+            <Text style={styles.favoriteText}>
+              {fav ? "Unfavorite" : "Favorite"}
+            </Text>
           </Pressable>
 
-          {/* Save Button */}
-          <Pressable
-            style={[styles.button, styles.primary, saving && styles.disabled]}
-            onPress={handleSave}
-            disabled={saving}
-          >
-            {saving ? (
-              <ActivityIndicator color="#000" />
-            ) : (
-              <Download size={20} color="#000" />
-            )}
-            <Text style={styles.primaryText}>
-              {saving ? "Saving…" : "Save to Gallery"}
-            </Text>
+          <Pressable style={styles.setButton} onPress={handleSetWallpaper}>
+            <Text style={styles.setText}>SET WALLPAPER</Text>
           </Pressable>
         </View>
       </SafeAreaView>
@@ -204,17 +175,13 @@ const styles = StyleSheet.create({
   },
   title: { color: "#fff", fontSize: 24, fontWeight: "700" },
 
-  button: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
+  setButton: {
+    backgroundColor: "#fff",
     paddingVertical: 16,
     borderRadius: 16,
+    alignItems: "center",
   },
-  primary: { backgroundColor: "#fff" },
-  primaryText: { color: "#000", fontWeight: "600" },
-  disabled: { opacity: 0.5 },
+  setText: { color: "#000", fontWeight: "700" },
 
   toast: {
     position: "absolute",
@@ -228,18 +195,21 @@ const styles = StyleSheet.create({
   },
   toastText: { color: "#000", fontWeight: "600" },
 
-  // Style for favorite button
   favoriteButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-    paddingVertical: 10,
-    borderRadius: 16,
     backgroundColor: "rgba(0,0,0,0.75)",
+    paddingVertical: 12,
+    borderRadius: 16,
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 8,
   },
   favoriteText: { color: "#fff", fontWeight: "600" },
 });
+
+
+
+
 
 
 

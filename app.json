@@ -8,40 +8,39 @@
     "scheme": "rork-app",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+
+    "updates": {
+      "enabled": false
+    },
+
     "splash": {
       "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
+
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "app.zenwalls.wallpapers2",
-      "infoPlist": {
-        "NSPhotoLibraryUsageDescription": "Allow ZenWalls to access your photos.",
-        "NSPhotoLibraryAddUsageDescription": "Allow ZenWalls to save photos."
-      }
+      "bundleIdentifier": "app.zenwalls.wallpapers2"
     },
+
     "android": {
       "package": "app.zenwalls.wallpapers2",
-      "versionCode": 6,
+      "versionCode": 7,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-foreground.png",
         "backgroundImage": "./assets/images/adaptive-background.png"
       },
       "permissions": [
-        "READ_MEDIA_IMAGES",
-        "READ_MEDIA_VISUAL_USER_SELECTED",
-        "ACCESS_MEDIA_LOCATION",
         "INTERNET",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE"
-      ],
-      "useNextNotificationsApi": false,
-      "requestLegacyExternalStorage": true
+    
+      ]
     },
+
     "web": {
       "favicon": "./assets/images/icon.png"
     },
+
     "plugins": [
       [
         "expo-router",
@@ -50,20 +49,15 @@
         }
       ],
       "expo-font",
-      "expo-web-browser",
-      [
-        "expo-media-library",
-        {
-          "photosPermission": "Allow ZenWalls to access your photos.",
-          "savePhotosPermission": "Allow ZenWalls to save photos.",
-          "isAccessMediaLocationEnabled": true
-        }
-      ]
+      "expo-web-browser"
     ],
+
     "experiments": {
       "typedRoutes": true
     },
+
     "owner": "sunnyapp",
+
     "extra": {
       "router": {
         "origin": "https://rork.com/"
@@ -74,6 +68,11 @@
     }
   }
 }
+
+
+
+
+
 
 
 
