@@ -1,90 +1,128 @@
-import { View, Text, FlatList, Pressable, StyleSheet } from "react-native";
-import { useEffect, useState } from "react";
-import { Image } from "expo-image";
-import { useRouter } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
+import React, { useMemo } from 'react';
+import { View, Text, StyleSheet, FlatList, Pressable, Dimensions } from 'react-native';
+import { Image } from 'expo-image';
+import { useRouter } from 'expo-router';
+import { Heart } from 'lucide-react-native';
+import { useFavorites } from '@/contexts/FavoritesContext'; // Use the new FavoritesContext
 
-import { getFavorites } from "../../utils/favorites";
-import { WALLPAPERS } from "../../constants/wallpapers";
+const { width } = Dimensions.get('window');
+const COLUMN_COUNT = 2;
+const SPACING = 12;
+const ITEM_WIDTH = (width - SPACING * (COLUMN_COUNT + 1)) / COLUMN_COUNT;
 
 export default function FavoritesScreen() {
-  const [favorites, setFavorites] = useState<string[]>([]);
   const router = useRouter();
+  const { favoriteIds, isLoading } = useFavorites(); // Fetch favorites from the context
 
-  useEffect(() => {
-    load();
-  }, []);
+  // Memoize the list of favorite wallpapers
+  const favoriteWallpapers = useMemo(() => {
+    return wallpapers.filter(w => favoriteIds.includes(w.id)); // Filter wallpapers by favorites
+  }, [favoriteIds]);
 
-  const load = async () => {
-    const ids = await getFavorites();
-    setFavorites(ids);
-  };
-
-  const favoriteWallpapers = WALLPAPERS.filter(w =>
-    favorites.includes(w.id)
+  const renderWallpaper = ({ item }: { item: typeof wallpapers[0] }) => (
+    <Pressable
+      style={styles.wallpaperCard}
+      onPress={() => router.push(`/preview?id=${item.id}`)} // Navigate to preview on click
+    >
+      <Image
+        source={{ uri: item.imageUrl }} // Use the wallpaper image URL
+        style={styles.wallpaperImage}
+        contentFit="cover"
+        transition={200}
+      />
+      <View style={styles.wallpaperOverlay}>
+        <Text style={styles.wallpaperTitle} numberOfLines={1}>
+          {item.title}
+        </Text>
+      </View>
+    </Pressable>
   );
 
-  if (favoriteWallpapers.length === 0) {
+  // Handle the empty state when no favorites are available
+  if (!isLoading && favoriteWallpapers.length === 0) {
     return (
-      <SafeAreaView style={styles.safe}>
-        <View style={styles.empty}>
-          <Text style={styles.emptyText}>No favorites yet ❤️</Text>
-        </View>
-      </SafeAreaView>
+      <View style={styles.emptyContainer}>
+        <Heart color="#333" size={64} />
+        <Text style={styles.emptyTitle}>No Favorites Yet</Text>
+        <Text style={styles.emptySubtitle}>
+          Start adding wallpapers to your favorites
+        </Text>
+      </View>
     );
   }
 
+  // Render the list of favorite wallpapers
   return (
-    <SafeAreaView style={styles.safe}>
+    <View style={styles.container}>
       <FlatList
         data={favoriteWallpapers}
+        renderItem={renderWallpaper}
         keyExtractor={(item) => item.id}
-        numColumns={2}
-        contentContainerStyle={styles.list}
+        numColumns={COLUMN_COUNT}
+        contentContainerStyle={styles.listContent}
+        columnWrapperStyle={styles.columnWrapper}
         showsVerticalScrollIndicator={false}
-        renderItem={({ item }) => (
-          <Pressable
-            style={styles.card}
-            onPress={() => router.push(`/preview?id=${item.id}`)}
-          >
-            <Image source={item.image} style={styles.image} />
-          </Pressable>
-        )}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: {
+  container: {
     flex: 1,
-    backgroundColor: "#000",
+    backgroundColor: '#000',
   },
-  list: {
+  listContent: {
+    padding: SPACING,
+  },
+  columnWrapper: {
+    justifyContent: 'space-between',
+    marginBottom: SPACING,
+  },
+  wallpaperCard: {
+    width: ITEM_WIDTH,
+    height: ITEM_WIDTH * 2,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  wallpaperImage: {
+    width: '100%',
+    height: '100%',
+  },
+  wallpaperOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     padding: 12,
-    paddingBottom: 90, // ✅ protects from bottom nav bar
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
   },
-  card: {
+  wallpaperTitle: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  emptyContainer: {
     flex: 1,
-    margin: 6,
-    borderRadius: 14,
-    overflow: "hidden",
+    backgroundColor: '#000',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 32,
   },
-  image: {
-    width: "100%",
-    height: 250,
+  emptyTitle: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: '700',
+    marginTop: 24,
+    marginBottom: 8,
   },
-  empty: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  emptyText: {
-    color: "#fff",
-    fontSize: 18,
-    opacity: 0.7,
+  emptySubtitle: {
+    color: '#666',
+    fontSize: 16,
+    textAlign: 'center',
   },
 });
+
 
 
 
